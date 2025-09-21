@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SafeZone — Stardust</title>
+  <style>
+    /* --- General Styles --- */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #a8e6cf, #ffcc80);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 20px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(5px);
+      font-size: 2em;
+      font-weight: bold;
+      border-bottom: 2px solid #ddd;
+    }
+
+    main {
+      flex: 1;
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    main h2 { 
+      font-size: 1.8em; 
+      margin-bottom: 15px; 
+    }
+
+    main p { 
+      font-size: 1.1em; 
+      line-height: 1.6; 
+      margin-bottom: 20px; 
+    }
+
+    footer {
+      text-align: center;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.6);
+      border-top: 2px solid #ddd;
+      font-size: 0.9em;
+    }
+
+    /* --- Chat Container --- */
+    #chat-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      height: 400px;
+      overflow: hidden;
+    }
+
+    #chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      margin: 8px 0;
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .user-message { 
+      background: #90caf9; 
+      align-self: flex-end; 
+      text-align: right; 
+    }
+
+    .bot-message { 
+      background: #e0e0e0; 
+      align-self: flex-start; 
+      text-align: left; 
+    }
+
+    .stardust {
+      position: relative;
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 20px;
+      background: transparent;
+      align-self: flex-start;
+      max-width: 40%;
+      font-size: 1.2em;
+      color: #888;
+      overflow: visible;
+    }
+
+    .stardust::before, .stardust::after {
+      content: "✨";
+      position: absolute;
+      animation: sparkle 1s ease-in-out infinite;
+    }
+
+    .stardust::before { 
+      left: -10px; top: -5px; 
+      animation-delay: 0s; 
+    }
+
+    .stardust::after { 
+      right: -10px; bottom: -5px; 
+      animation-delay: 0.5s; 
+    }
+
+    @keyframes sparkle {
+      0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1.2) rotate(20deg); }
+      100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    }
+
+    #chat-input { 
+      display: flex; 
+      border-top: 1px solid #ccc; 
+    }
+
+    #chat-input input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+      font-size: 1em;
+      border-radius: 0 0 0 15px;
+    }
+
+    #chat-input button {
+      padding: 12px 20px;
+      border: none;
+      background: #81c784;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 0 0 15px 0;
+      transition: background 0.3s;
+    }
+
+    #chat-input button:hover { background: #66bb6a; }
+
+    /* --- Music Controls --- */
+    #music-controls { 
+      text-align: center; 
+      margin: 20px 0; 
+    }
+
+    #music-controls iframe { border-radius: 10px; }
+  </style>
+</head>
+
+<body>
+  <header>✨ SAFEZONE ✨</header>
+
+  <main>
+    <h2>Why SafeZone?</h2>
+    <p>SafeZone is your calming digital corner — a space to release, reflect, and feel supported whenever life gets overwhelming.</p>
+    <h2>How It Helps</h2>
+    <p>Here, you can share your thoughts and feelings. SafeZone gently listens, offering compassionate responses to help you breathe easier and regain focus.</p>
+  </main>
+
+  <div id="music-controls">
+    <iframe width="300" height="60" 
+      src="https://www.youtube.com/embed/dy9nwe9_xzw?autoplay=1&loop=1&playlist=dy9nwe9_xzw" 
+      frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+    </iframe>
+  </div>
+
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <div id="chat-input">
+      <input type="text" id="user-input" placeholder="Type your message...">
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <footer>© 2025 SafeZone. All rights reserved.</footer>
+
+  <script>
+    // --- Elements ---
+    const chatBox = document.getElementById('chat-box');
+    const inputEl = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    let userName = null;
+    let awaitingName = false;
+    let verseIndex = 0;
+
+    // --- Bible Verses ---
+    const bibleVerses = [
+      "Philippians 4:13 - I can do all things through Christ who strengthens me.",
+      "Jeremiah 29:11 - For I know the plans I have for you, declares the Lord.",
+      "Psalm 23:1 - The Lord is my shepherd; I shall not want.",
+      "Romans 8:28 - And we know that in all things God works for the good of those who love Him.",
+      "Proverbs 3:5 - Trust in the Lord with all your heart and lean not on your own understanding.",
+      "Isaiah 41:10 - Fear not, for I am with you; be not dismayed, for I am your God.",
+      "Matthew 11:28 - Come to me, all who labor and are heavy laden, and I will give you rest.",
+      "Psalm 46:1 - God is our refuge and strength, a very present help in trouble.",
+      "John 14:27 - Peace I leave with you; my peace I give to you.",
+      "1 Peter 5:7 - Cast all your anxiety on him because he cares for you."
+    ];
+
+    // --- Replies ---
+    const happyReplies = [
+      "That's wonderful! God loves you! 🌸",
+      "Praise God for your joy! Keep shining! ✨",
+      "So happy to hear that! Blessings to you today. 🙏",
+      "Glory to God! Your happiness is contagious! 😄",
+      "God smiles upon your joy! Keep it going! 🌟",
+      "Wonderful news! Keep your spirit lifted! 🌼",
+      "Such good vibes! God is with you! 🌷",
+      "Your heart is light, God rejoices! 💖",
+      "Keep celebrating life! God blesses you! 🎉",
+      "Your joy brightens the day! ✨"
+    ];
+
+    const sadReplies = [
+      "I’m here for you. God sees your pain. 💛",
+      "Take a deep breath. You’re not alone. 🌿",
+      "Even in sadness, hope is near. 🙏",
+      "God is with you, hold on a little longer. 🌸",
+      "Your feelings matter, and you are loved. 💖",
+      "It's okay to feel this way. I’m listening. 🌷",
+      "You are not alone; God cares for you. 💛",
+      "Let your heart rest, peace will come. 🌼",
+      "Sending prayers for comfort and strength. 🙏",
+      "Even storms pass. Stay strong, God is with you. ⛅"
+    ];
+
+    let usedHappy = [];
+    let usedSad = [];
+
+    function getUniqueReply(type) {
+      let pool = type === 'happy' ? happyReplies : sadReplies;
+      let used = type === 'happy' ? usedHappy : usedSad;
+
+      if (used.length >= pool.length) used = [];
+      let available = pool.filter(r => !used.includes(r));
+      let reply = available[Math.floor(Math.random() * available.length)];
+      used.push(reply);
+      if (type === 'happy') usedHappy = used; else usedSad = used;
+      return reply;
+    }
+
+    function addMessage(text, sender) {
+      const msg = document.createElement('div');
+      msg.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+      msg.textContent = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showStardust() {
+      const el = document.createElement('div');
+      el.classList.add('message', 'bot-message', 'stardust');
+      el.textContent = "✨ ... ✨";
+      chatBox.appendChild(el);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return el;
+    }
+
+    function botReply(userText) {
+      const lower = userText.toLowerCase();
+      let reply = "I hear you. Can you tell me more? 🌿";
+
+      if (awaitingName) {
+        userName = userText;
+        reply = `Nice to meet you, ${userName}. How are you feeling today?`;
+        awaitingName = false;
+      } else if (lower.includes('hi') || lower.includes('hello')) {
+        reply = "Hello! What's your name?";
+        awaitingName = true;
+      } else if (
+        lower.includes("i'm good") || lower.includes("im good") ||
+        lower.includes("glad") || lower.includes("happy") ||
+        lower.includes("joyful") || lower.includes("blessed")
+      ) {
+        reply = getUniqueReply('happy');
+      } else if (
+        lower.includes('sad') || lower.includes('unhappy') || lower.includes('tired') ||
+        lower.includes('angry') || lower.includes('stressed') || lower.includes('depressed')
+      ) {
+        reply = getUniqueReply('sad');
+      } else if (
+        lower.includes('thank') || lower.includes('ok') || lower.includes('yes') || lower.includes('that helps')
+      ) {
+        reply = bibleVerses[verseIndex];
+        verseIndex = (verseIndex + 1) % bibleVerses.length;
+      }
+
+      const stardustEl = showStardust();
+      const delay = 900 + Math.random() * 600;
+      setTimeout(() => { stardustEl.remove(); addMessage(reply, 'bot'); }, delay);
+    }
+
+    function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      botReply(text);
+      inputEl.value = '';
+      inputEl.focus();
+    }
+
+    // --- Event Listeners ---
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+    window.addEventListener('load', () => {
+      addMessage("Welcome to SafeZone✨ Hi 😊", 'bot');
+    });
+  </script>
+</body>
+</html>
